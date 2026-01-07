@@ -12,8 +12,8 @@ type UserHandler struct {
 	as domain.AuthenticationService
 }
 
-func NewUserHandler(us domain.UserService) *UserHandler {
-	return &UserHandler{us: us}
+func NewUserHandler(us domain.UserService, as domain.AuthenticationService) *UserHandler {
+	return &UserHandler{us: us, as: as}
 }
 
 // SignUp handles user registration.
