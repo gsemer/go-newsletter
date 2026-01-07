@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"newsletter/config"
 	"newsletter/internal/users/domain"
@@ -98,9 +99,16 @@ func (us *UserService) Authenticate(email, password string) (*domain.User, error
 // The token is short-lived (15 minutes) and includes the user's email and ID.
 func (us *UserService) GenerateAccessToken(user *domain.User) (string, error) {
 	slog.Info("generating access token",
-		"user_id", user.ID.String(),
+		"user_id",
+		user.ID.String(),
 		"email", user.Email,
 	)
+
+	secret := config.GetEnv("JWT_SECRET_KEY", "")
+	if secret == "" {
+		slog.Error("JWT secret key not set", "user_id", user.ID.String())
+		return "", errors.New("JWT secret key is missing")
+	}
 
 	claims := &domain.Claims{
 		Email: user.Email,
@@ -113,12 +121,9 @@ func (us *UserService) GenerateAccessToken(user *domain.User) (string, error) {
 
 	access := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	accessToken, err := access.SignedString([]byte(config.GetEnv("JWT_SECRET_KEY", "")))
+	accessToken, err := access.SignedString([]byte(secret))
 	if err != nil {
-		slog.Error("failed to sign access token",
-			"user_id", user.ID.String(),
-			"error", err,
-		)
+		slog.Error("failed to sign access token", "user_id", user.ID.String(), "error", err)
 		return "", err
 	}
 
