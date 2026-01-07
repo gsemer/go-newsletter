@@ -69,9 +69,9 @@ func TestUserService_Create_Failure(t *testing.T) {
 
 // ------------------- Authenticate -------------------
 
-func TestUserService_Authenticate_Success(t *testing.T) {
+func TestAuthenticationService_Authenticate_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	us := NewUserService(mockRepo)
+	as := NewAuthenticationService(mockRepo)
 
 	password := "password123"
 	hashed, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -79,7 +79,7 @@ func TestUserService_Authenticate_Success(t *testing.T) {
 
 	mockRepo.On("Get", mock.Anything, "test@example.com").Return(storedUser, nil)
 
-	user, err := us.Authenticate("test@example.com", password)
+	user, err := as.Authenticate("test@example.com", password)
 
 	assert.NoError(t, err)
 	assert.Equal(t, storedUser.ID, user.ID)
@@ -87,29 +87,29 @@ func TestUserService_Authenticate_Success(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
-func TestUserService_Authenticate_WrongPassword(t *testing.T) {
+func TestAuthenticationService_Authenticate_WrongPassword(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	us := NewUserService(mockRepo)
+	as := NewAuthenticationService(mockRepo)
 
 	hashed, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
 	storedUser := &domain.User{ID: uuid.New(), Email: "test@example.com", Password: string(hashed)}
 
 	mockRepo.On("Get", mock.Anything, "test@example.com").Return(storedUser, nil)
 
-	user, err := us.Authenticate("test@example.com", "wrongpass")
+	user, err := as.Authenticate("test@example.com", "wrongpass")
 
 	assert.Error(t, err)
 	assert.Nil(t, user)
 	mockRepo.AssertExpectations(t)
 }
 
-func TestUserService_Authenticate_UserNotFound(t *testing.T) {
+func TestAuthenticationService_Authenticate_UserNotFound(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	us := NewUserService(mockRepo)
+	as := NewAuthenticationService(mockRepo)
 
 	mockRepo.On("Get", mock.Anything, "missing@example.com").Return((*domain.User)(nil), errors.New("not found"))
 
-	user, err := us.Authenticate("missing@example.com", "any")
+	user, err := as.Authenticate("missing@example.com", "any")
 
 	assert.Error(t, err)
 	assert.Nil(t, user)
@@ -118,8 +118,8 @@ func TestUserService_Authenticate_UserNotFound(t *testing.T) {
 
 // ------------------- GenerateAccessToken -------------------
 
-func TestUserService_GenerateAccessToken_Success(t *testing.T) {
-	us := &UserService{}
+func TestAuthenticationService_GenerateAccessToken_Success(t *testing.T) {
+	as := &AuthenticationService{}
 	user := &domain.User{
 		ID:    uuid.New(),
 		Email: "test@example.com",
@@ -128,14 +128,14 @@ func TestUserService_GenerateAccessToken_Success(t *testing.T) {
 	// Set a temporary JWT_SECRET_KEY for test
 	t.Setenv("JWT_SECRET_KEY", "secret123")
 
-	token, err := us.GenerateAccessToken(user)
+	token, err := as.GenerateAccessToken(user)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 }
 
-func TestUserService_GenerateAccessToken_Failure(t *testing.T) {
-	us := &UserService{}
+func TestAuthenticationService_GenerateAccessToken_Failure(t *testing.T) {
+	as := &AuthenticationService{}
 	user := &domain.User{
 		ID:    uuid.Nil, // invalid ID still works, but we'll test secret missing
 		Email: "test@example.com",
@@ -144,7 +144,7 @@ func TestUserService_GenerateAccessToken_Failure(t *testing.T) {
 	// Unset JWT_SECRET_KEY to simulate signing failure
 	t.Setenv("JWT_SECRET_KEY", "")
 
-	token, err := us.GenerateAccessToken(user)
+	token, err := as.GenerateAccessToken(user)
 
 	assert.Error(t, err)
 	assert.Equal(t, "", token)

@@ -63,7 +63,7 @@ func NewAuthenticationService(ur domain.UserRepository) *AuthenticationService {
 //
 // It returns the authenticated user if credentials are valid.
 // The user's password hash is cleared before returning to prevent accidental exposure.
-func (us *UserService) Authenticate(email, password string) (*domain.User, error) {
+func (us *AuthenticationService) Authenticate(email, password string) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -97,7 +97,7 @@ func (us *UserService) Authenticate(email, password string) (*domain.User, error
 
 // GenerateAccessToken generates a JWT access token for an authenticated user.
 // The token is short-lived (15 minutes) and includes the user's email and ID.
-func (us *UserService) GenerateAccessToken(user *domain.User) (string, error) {
+func (us *AuthenticationService) GenerateAccessToken(user *domain.User) (string, error) {
 	slog.Info("generating access token",
 		"user_id",
 		user.ID.String(),
