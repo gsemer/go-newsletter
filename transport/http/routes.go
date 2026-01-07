@@ -8,15 +8,15 @@ import (
 )
 
 type App struct {
-	uh handler.UserHandler
+	Userhandler handler.UserHandler
 }
 
 func (app *App) Routes() http.Handler {
 	r := mux.NewRouter()
 
 	userRoutes := r.PathPrefix("/users").Subrouter()
-	userRoutes.HandleFunc("/signup", app.uh.SignUp).Methods("POST")
-	userRoutes.HandleFunc("/signin", app.uh.Signin).Methods("POST")
+	userRoutes.HandleFunc("/signup", app.Userhandler.SignUp).Methods("POST")
+	userRoutes.HandleFunc("/signin", app.Userhandler.Signin).Methods("POST")
 
 	return r
 }
