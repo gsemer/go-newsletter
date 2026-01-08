@@ -30,7 +30,7 @@ func NewUserService(ur domain.UserRepository) *UserService {
 // On success, Create returns the newly created user entity.
 // On failure, the error is logged and returned to the caller.
 func (us *UserService) Create(user *domain.User) (*domain.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	slog.Info(
@@ -64,7 +64,7 @@ func NewAuthenticationService(ur domain.UserRepository) *AuthenticationService {
 // It returns the authenticated user if credentials are valid.
 // The user's password hash is cleared before returning to prevent accidental exposure.
 func (us *AuthenticationService) Authenticate(email, password string) (*domain.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	user, err := us.ur.Get(ctx, email)

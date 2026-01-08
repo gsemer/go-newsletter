@@ -29,7 +29,7 @@ func NewNewsletterService(nr domain.NewsletterRepository) *NewsletterService {
 // A context with a fixed timeout is used to prevent the operation from
 // blocking indefinitely.
 func (ns *NewsletterService) Create(newsletter *domain.Newsletter) (*domain.Newsletter, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	slog.Info(
@@ -61,7 +61,7 @@ func (ns *NewsletterService) Create(newsletter *domain.Newsletter) (*domain.News
 // On success, it returns a slice of newsletters. If no newsletters are found,
 // it returns an empty slice and no error.
 func (ns *NewsletterService) GetAll(ownerID uuid.UUID, limit, page int) ([]*domain.Newsletter, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	slog.Info(
