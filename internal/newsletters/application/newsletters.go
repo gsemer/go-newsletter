@@ -52,6 +52,32 @@ func (ns *NewsletterService) Create(newsletter *domain.Newsletter) (*domain.News
 	return newNewsletter, nil
 }
 
-func (ns *NewsletterService) GetAll(ownerID uuid.UUID) ([]*domain.Newsletter, error) {
-	return []*domain.Newsletter{}, nil
+// GetAll retrieves all newsletters belonging to a specific owner.
+//
+// It queries the persistence layer for all newsletter records associated
+// with the provided ownerID. A 3-second timeout is enforced to ensure
+// responsiveness.
+//
+// On success, it returns a slice of newsletters. If no newsletters are found,
+// it returns an empty slice and no error.
+func (ns *NewsletterService) GetAll(ownerID uuid.UUID, limit, page int) ([]*domain.Newsletter, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	slog.Info(
+		"listing of newsletters",
+		"owner_id", ownerID,
+	)
+
+	newNewsletters, err := ns.nr.GetAll(ctx, ownerID, limit, page)
+	if err != nil {
+		slog.Error(
+			"failed to get the newsletters",
+			"owner_id", ownerID,
+			"error", err,
+		)
+		return nil, err
+	}
+
+	return newNewsletters, nil
 }

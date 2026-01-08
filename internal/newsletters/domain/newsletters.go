@@ -21,7 +21,7 @@ type Newsletter struct {
 // and getting a list of all of them that belong to a particular user.
 type NewsletterService interface {
 	Create(newsletter *Newsletter) (*Newsletter, error)
-	GetAll(ownerID uuid.UUID) ([]*Newsletter, error)
+	GetAll(ownerID uuid.UUID, limit, page int) ([]*Newsletter, error)
 }
 
 // NewsletterRepository is an interface that contains a collection of method signatures
@@ -29,5 +29,5 @@ type NewsletterService interface {
 // and getting a list of all of them that belong to a particular user.
 type NewsletterRepository interface {
 	Create(ctx context.Context, newsletter *Newsletter) (*Newsletter, error)
-	GetAll(ctx context.Context, ownerID uuid.UUID) ([]*Newsletter, error)
+	GetAll(ctx context.Context, ownerID uuid.UUID, limit, page int) ([]*Newsletter, error)
 }
