@@ -83,7 +83,6 @@ func TestAuthenticationService_Authenticate_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, storedUser.ID, user.ID)
-	assert.Equal(t, "", user.Password, "password should be cleared")
 	mockRepo.AssertExpectations(t)
 }
 

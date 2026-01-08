@@ -84,9 +84,6 @@ func (us *AuthenticationService) Authenticate(email, password string) (*domain.U
 		return nil, err
 	}
 
-	// Never expose password hash
-	user.Password = ""
-
 	slog.Info("user authenticated successfully",
 		"user_id", user.ID.String(),
 		"email", user.Email,

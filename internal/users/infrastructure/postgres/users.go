@@ -32,7 +32,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 //   - database constraint violations (e.g. duplicate email)
 //   - database connectivity errors
 func (ur *UserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
@@ -43,15 +43,13 @@ func (ur *UserRepository) Create(ctx context.Context, user *domain.User) (*domai
 	err = ur.db.QueryRowContext(
 		ctx,
 		query,
-		hashedPassword,
+		string(hashedPassword),
 		user.Email,
 		time.Now(),
 	).Scan(&userDB.ID, &userDB.Email, &userDB.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
-
-	userDB.Password = ""
 
 	return userDB, nil
 }
