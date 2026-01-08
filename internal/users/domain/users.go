@@ -17,10 +17,10 @@ const (
 
 // User represents the user account.
 type User struct {
-	ID        uuid.UUID `json:"id,omitempty"` // ID of the user
-	Password  string    `json:"password"`     // Hashed password of the user
-	Email     string    `json:"email"`        // Email of the user
-	CreatedAt time.Time `json:"created_at"`   // Creation time of the user
+	ID        uuid.UUID `json:"id"`         // ID of the user
+	Password  string    `json:"password"`   // Hashed password of the user
+	Email     string    `json:"email"`      // Email of the user
+	CreatedAt time.Time `json:"created_at"` // Creation time of the user
 }
 
 // UserService is an interface that contains a collection of method signatures
