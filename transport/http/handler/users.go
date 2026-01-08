@@ -139,7 +139,7 @@ func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 	// Set token in Authorization header
 	w.Header().Set("Authorization", "Bearer "+accessToken)
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) // 200 OK is more appropriate for login
+	w.WriteHeader(http.StatusOK)
 
 	response := UserResponse{
 		ID:        authUser.ID,
