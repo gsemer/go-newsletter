@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	awsrepo "newsletter/internal/infrastructure/aws"
 	"newsletter/internal/infrastructure/database"
 	"newsletter/internal/infrastructure/firebase"
 	"newsletter/internal/infrastructure/workerpool"
@@ -38,19 +39,24 @@ type App struct {
 //
 // This function is typically called once at application startup to prepare the app for handling HTTP requests.
 func NewApp(wp *workerpool.WorkerPool) *App {
-	conn := database.ConnectWithRetry()
-	if conn == nil {
-		log.Panic("Can't connect to Postgres!")
+	dbConnection := database.InitPostgres()
+	if dbConnection == nil {
+		log.Fatalf("Can't connect to Postgres!")
 	}
 
 	firebaseClient, err := firebase.InitFirestore(context.TODO())
 	if err != nil {
-		log.Panicf("Can't connect to Firebase! Errpr: %v", err)
+		log.Fatalf("Can't connect to Firebase! Error: %v", err)
+	}
+
+	sesClient, err := awsrepo.InitSESClient()
+	if err != nil {
+		log.Fatalf("Can't initialize SES client! Error: %v", err)
 	}
 
 	// Initialize repositories
-	userRepo := userrepo.NewUserRepository(conn)
-	newsletterRepo := newsletterrepo.NewNewsletterRepository(conn)
+	userRepo := userrepo.NewUserRepository(dbConnection)
+	newsletterRepo := newsletterrepo.NewNewsletterRepository(dbConnection)
 	subscriptionRepo := subscriberepo.NewSubscriptionRepository(firebaseClient)
 
 	// Initialize services
@@ -58,7 +64,7 @@ func NewApp(wp *workerpool.WorkerPool) *App {
 	authService := userapp.NewAuthenticationService(userRepo)
 	newsletterService := newsletterapp.NewNewsletterService(newsletterRepo)
 	subscriptionService := subscribeapp.NewSubscriptionService(subscriptionRepo)
-	emailService := serviceapp.NewEmailService()
+	emailService := serviceapp.NewEmailService(sesClient)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService, authService)
