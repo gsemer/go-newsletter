@@ -78,7 +78,7 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 			To:      newSubscription.Email,
 			Subject: "Confirmation",
 			Text:    "",
-			HTML:    "C",
+			HTML:    "",
 		},
 		Service: sh.es,
 	}
