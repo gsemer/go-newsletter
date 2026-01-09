@@ -27,7 +27,6 @@ func (sr *SubscriptionRepository) Subscribe(ctx context.Context, subscription *d
 	}
 
 	subscription.ID = docRef.ID
-	subscription.Confirmed = true
 	return subscription, nil
 }
 

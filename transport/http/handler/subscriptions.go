@@ -10,7 +10,6 @@ import (
 	"newsletter/internal/subscriptions/domain"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -33,25 +32,17 @@ type SubscribeRequest struct {
 
 type SubscribeResponse struct {
 	ID           string    `json:"id"`
-	NewsletterID uuid.UUID `json:"newsletter_id"`
+	NewsletterID string    `json:"newsletter_id"`
 	Email        string    `json:"email"`
-	Confirmed    bool      `json:"confirmed"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	// Retrieve newsletter ID from path parameters
 	vars := mux.Vars(r)
-	newsletterIDStr, found := vars["newsletter_id"]
+	newsletterID, found := vars["newsletter_id"]
 	if !found {
 		http.Error(w, "newsletter ID is missing from path parameters", http.StatusBadRequest)
-		return
-	}
-	// Convert string to uuid.UUID
-	newsletterID, err := uuid.Parse(newsletterIDStr)
-	if err != nil {
-		slog.Warn("invalid newsletter ID", "newsletterID", newsletterIDStr, "error", err)
-		http.Error(w, "invalid newsletter ID format", http.StatusBadRequest)
 		return
 	}
 
@@ -92,7 +83,6 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		ID:           newSubscription.ID,
 		NewsletterID: newSubscription.NewsletterID,
 		Email:        newSubscription.Email,
-		Confirmed:    newSubscription.Confirmed,
 		CreatedAt:    newSubscription.CreatedAt,
 	}
 	if err := json.NewEncoder(w).Encode(subscribeResponse); err != nil {

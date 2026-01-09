@@ -3,18 +3,15 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // Subscription represents a newsletter subscription.
 type Subscription struct {
-	ID               string    `firestore:"-" json:"id"` // Firestore document ID
-	NewsletterID     uuid.UUID `firestore:"newsletterId" json:"newsletter_id"`
-	Email            string    `firestore:"email" json:"email"`
-	Confirmed        bool      `firestore:"confirmed" json:"-"` // hide in API
-	UnsubscribeToken string    `firestore:"unsubscribeToken" json:"-"`
-	CreatedAt        time.Time `firestore:"createdAt" json:"created_at"`
+	ID               string    `firestore:"-" json:"id"`                       // Firestore document ID
+	NewsletterID     string    `firestore:"newsletterId" json:"newsletter_id"` // Newsletter ID
+	Email            string    `firestore:"email" json:"email"`                // Email of the subscriber
+	UnsubscribeToken string    `firestore:"unsubscribeToken" json:"-"`         // Token to unsubscribe
+	CreatedAt        time.Time `firestore:"createdAt" json:"created_at"`       // Creation time
 }
 
 // SubscriptionService is an interface that contains a collection of method signatures
