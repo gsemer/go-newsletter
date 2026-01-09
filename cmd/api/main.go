@@ -6,17 +6,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"time"
 
-	_ "github.com/jackc/pgconn"
-	_ "github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/stdlib"
-
+	"newsletter/internal/infrastructure/workerpool"
 	transporthttp "newsletter/transport/http"
 )
 
 func main() {
-	app := transporthttp.NewApp()
+	wp := workerpool.NewWorkerPool(5, 100, &sync.WaitGroup{})
+	wp.Start()
+
+	app := transporthttp.NewApp(wp)
 
 	server := &http.Server{
 		Addr:    ":8001",
@@ -38,4 +39,7 @@ func main() {
 
 	log.Println("Shutting down...")
 	server.Shutdown(ctx)
+
+	wp.Shutdown()
+	wp.Wait()
 }
