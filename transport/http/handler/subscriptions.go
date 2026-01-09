@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"newsletter/internal/infrastructure/workerpool"
+	"newsletter/internal/infrastructure/workerpool/jobs"
+	notifications "newsletter/internal/notifications/domain"
 	"newsletter/internal/subscriptions/domain"
 	"time"
 
@@ -13,10 +16,12 @@ import (
 
 type SubscriptionHandler struct {
 	ss domain.SubscriptionService
+	es notifications.EmailService
+	wp *workerpool.WorkerPool
 }
 
-func NewSubscriptionHandler(ss domain.SubscriptionService) *SubscriptionHandler {
-	return &SubscriptionHandler{ss: ss}
+func NewSubscriptionHandler(ss domain.SubscriptionService, es notifications.EmailService, wp *workerpool.WorkerPool) *SubscriptionHandler {
+	return &SubscriptionHandler{ss: ss, es: es, wp: wp}
 }
 
 // SubscribeRequest represents the payload for subscribing to a newsletter.
@@ -37,13 +42,11 @@ type SubscribeResponse struct {
 func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	// Retrieve newsletter ID from path parameters
 	vars := mux.Vars(r)
-
 	newsletterIDStr, found := vars["newsletter_id"]
 	if !found {
 		http.Error(w, "newsletter ID is missing from path parameters", http.StatusBadRequest)
 		return
 	}
-
 	// Convert string to uuid.UUID
 	newsletterID, err := uuid.Parse(newsletterIDStr)
 	if err != nil {
@@ -63,12 +66,23 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		NewsletterID: newsletterID,
 		Email:        request.Email,
 	}
-
 	newSubscription, err := sh.ss.Subscribe(&subscription)
 	if err != nil {
 		http.Error(w, "failed to create subscription: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Send confirmation email to the subscriber
+	job := jobs.SendEmailJob{
+		Email: notifications.Email{
+			To:      newSubscription.Email,
+			Subject: "Confirmation",
+			Text:    "",
+			HTML:    "C",
+		},
+		Service: sh.es,
+	}
+	sh.wp.Submit(&job)
 
 	// Respond with created subscription in JSON
 	w.Header().Set("Content-Type", "application/json")
@@ -81,7 +95,6 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		Confirmed:    newSubscription.Confirmed,
 		CreatedAt:    newSubscription.CreatedAt,
 	}
-
 	if err := json.NewEncoder(w).Encode(subscribeResponse); err != nil {
 		slog.Error("failed to encode subscription response",
 			"newsletter_id", newSubscription.NewsletterID,
