@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"newsletter/internal/infrastructure/workerpool"
@@ -68,8 +69,8 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		Email: notifications.Email{
 			To:      newSubscription.Email,
 			Subject: "Confirmation",
-			Text:    "",
-			HTML:    "",
+			Text:    fmt.Sprintf(`You can unsubscribe here http://localhost:8001/subscriptions/unsubscribe?token=%s`, newSubscription.UnsubscribeToken),
+			HTML:    fmt.Sprintf(`<p>You can unsubscribe here <a href="http://localhost:8001/subscriptions/unsubscribe?token=%s">Unsubscribe</a></p>`, newSubscription.UnsubscribeToken),
 		},
 		Service: sh.es,
 	}
