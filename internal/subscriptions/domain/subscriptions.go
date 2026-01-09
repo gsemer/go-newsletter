@@ -9,18 +9,27 @@ import (
 
 // Subscription represents a newsletter subscription.
 type Subscription struct {
-	ID           string    `json:"id"`            // Unique ID of the subscription
-	NewsletterID uuid.UUID `json:"newsletter_id"` // ID of the newsletter this subscription belongs to
-	Email        string    `json:"email"`         // Email of the subscriber
-	CreatedAt    time.Time `json:"created_at"`    // Creation time of the subscription
+	ID               string    `firestore:"-" json:"id"` // Firestore document ID
+	NewsletterID     uuid.UUID `firestore:"newsletterId" json:"newsletter_id"`
+	Email            string    `firestore:"email" json:"email"`
+	Confirmed        bool      `firestore:"confirmed" json:"-"` // hide in API
+	UnsubscribeToken string    `firestore:"unsubscribeToken" json:"-"`
+	CreatedAt        time.Time `firestore:"createdAt" json:"created_at"`
+}
+
+// SubscriptionService is an interface that contains a collection of method signatures
+// which will be implemented in application level.
+type SubscriptionService interface {
+	// Subscribe adds a new subscription for a newsletter
+	Subscribe(subscription *Subscription) (*Subscription, error)
+
+	// Unsubscribe removes a subscription
+	Unsubscribe() error
 }
 
 // SubscriptionRepository is an interface that contains a collection of method signatures
 // which will be implemented in persistence level.
 type SubscriptionRepository interface {
-	// Subscribe adds a new subscription for a newsletter
-	Subscribe(ctx context.Context, newsletterID uuid.UUID, email string) (*Subscription, error)
-
-	// Unsubscribe removes a subscription
-	Unsubscribe(ctx context.Context, subscriptionID string) error
+	Subscribe(ctx context.Context, subscription *Subscription) (*Subscription, error)
+	Unsubscribe(ctx context.Context) error
 }
