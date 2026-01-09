@@ -23,7 +23,7 @@ import (
 //
 // This function belongs to the infrastructure layer and should only be called
 // from the application's root.
-func ConnectWithRetry() *sql.DB {
+func InitPostgres() *sql.DB {
 	dsn := config.GetEnv("DSN", "")
 
 	for i := 0; i < 10; i++ {
