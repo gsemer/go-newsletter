@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=newsletter
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=rootpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/postgres_data
+    networks:
+      - postgres_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  postgres_network:
