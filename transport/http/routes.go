@@ -10,8 +10,10 @@ import (
 
 	"newsletter/internal/infrastructure/database"
 	"newsletter/internal/infrastructure/firebase"
+	"newsletter/internal/infrastructure/workerpool"
 	newsletterapp "newsletter/internal/newsletters/application"
 	newsletterrepo "newsletter/internal/newsletters/infrastructure/postgres"
+	serviceapp "newsletter/internal/notifications/application"
 	subscribeapp "newsletter/internal/subscriptions/application"
 	subscriberepo "newsletter/internal/subscriptions/infrastructure/firebase"
 	userapp "newsletter/internal/users/application"
@@ -35,7 +37,7 @@ type App struct {
 // 6. Returns a pointer to an App struct containing the initialized handlers.
 //
 // This function is typically called once at application startup to prepare the app for handling HTTP requests.
-func NewApp() *App {
+func NewApp(wp *workerpool.WorkerPool) *App {
 	conn := database.ConnectWithRetry()
 	if conn == nil {
 		log.Panic("Can't connect to Postgres!")
@@ -56,11 +58,12 @@ func NewApp() *App {
 	authService := userapp.NewAuthenticationService(userRepo)
 	newsletterService := newsletterapp.NewNewsletterService(newsletterRepo)
 	subscriptionService := subscribeapp.NewSubscriptionService(subscriptionRepo)
+	emailService := serviceapp.NewEmailService()
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService, authService)
 	newsletterHandler := handler.NewNewsletterHandler(newsletterService)
-	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, emailService, wp)
 
 	return &App{
 		uh: *userHandler,
