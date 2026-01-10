@@ -103,7 +103,7 @@ func (app *App) Routes() http.Handler {
 	// POST /subscriptions/{newsletter_id} - Subscribes the current user to a newsletter.
 	subscriptionRoutes.HandleFunc("/{newsletter_id}", app.sh.Subscribe).Methods("POST")
 	// POST /subscriptions/{newsletter_id} - Unsubscribes the current user from a newsletter.
-	subscriptionRoutes.HandleFunc("/{newsletter_id}", app.sh.Unsubscribe).Methods("DELETE")
+	subscriptionRoutes.HandleFunc("/unsubscribe", app.sh.Unsubscribe).Methods("DELETE")
 
 	return r
 }
