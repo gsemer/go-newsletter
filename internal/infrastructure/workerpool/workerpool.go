@@ -15,6 +15,12 @@ type Job interface {
 	Process() error
 }
 
+// JobSubmiter contains Submit method whicj will me imlemented by WorkerPool
+// It was necessary to create this for testing.
+type JobSubmiter interface {
+	Submit(job Job)
+}
+
 // WorkerPool manages a fixed number of workers that process
 // submitted jobs concurrently.
 type WorkerPool struct {

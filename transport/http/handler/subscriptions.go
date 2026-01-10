@@ -18,10 +18,10 @@ import (
 type SubscriptionHandler struct {
 	ss domain.SubscriptionService
 	es notifications.EmailService
-	wp *workerpool.WorkerPool
+	wp workerpool.JobSubmiter
 }
 
-func NewSubscriptionHandler(ss domain.SubscriptionService, es notifications.EmailService, wp *workerpool.WorkerPool) *SubscriptionHandler {
+func NewSubscriptionHandler(ss domain.SubscriptionService, es notifications.EmailService, wp workerpool.JobSubmiter) *SubscriptionHandler {
 	return &SubscriptionHandler{ss: ss, es: es, wp: wp}
 }
 
