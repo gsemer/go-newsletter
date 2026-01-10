@@ -110,17 +110,15 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 			Text: fmt.Sprintf(
 				`You are receiving this email because you subscribed to this newsletter.
                 If you no longer wish to receive these emails, you can unsubscribe using the link below:
-                %s/subscriptions/%s?token=%s`,
+                %s/subscriptions/unsubscribe?token=%s`,
 				config.GetEnv("BASE_URL", ""),
-				newSubscription.NewsletterID,
 				newSubscription.UnsubscribeToken,
 			),
 			HTML: fmt.Sprintf(
 				`<p>You are receiving this email because you subscribed to this newsletter.</p>
 				<p>If you no longer wish to receive these emails, you can
-				<a href="%s/subscriptions/%s?token=%s">unsubscribe here</a>.</p>`,
+				<a href="%s/subscriptions/unsubscribe?token=%s">unsubscribe here</a>.</p>`,
 				config.GetEnv("BASE_URL", ""),
-				newSubscription.NewsletterID,
 				newSubscription.UnsubscribeToken,
 			),
 		},
@@ -147,6 +145,40 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// Unsubscribe removes a subscription using an unsubscribe token.
+//
+// This endpoint allows a user to unsubscribe from a newsletter by providing
+// a unique token, typically included in the newsletter email. If the token
+// is valid, the associated subscription is deleted from the system.
+//
+// HTTP Method: DELETE
+//
+// Query Parameters:
+//   - token (string) - The unique unsubscribe token identifying the subscription.
+//
+// Behavior:
+//   - Returns 400 Bad Request if the token is missing.
+//   - Returns 404 Not Found if no subscription matches the given token.
+//   - Returns 204 No Content on successful unsubscription.
+//
+// Example usage:
+//
+//	DELETE /subscriptions/unsubscribe?token=abcd1234
+//
+// Notes:
+//   - The unsubscribe token should be globally unique for each subscription.
 func (sh *SubscriptionHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "missing token", http.StatusBadRequest)
+		return
+	}
 
+	err := sh.ss.Unsubscribe(token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
