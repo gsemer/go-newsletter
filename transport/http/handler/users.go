@@ -10,24 +10,31 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserHandler handles HTTP requests related to user accounts,
+// including registration and authentication.
 type UserHandler struct {
 	us domain.UserService
 	as domain.AuthenticationService
 }
 
+// NewUserHandler creates a new UserHandler.
 func NewUserHandler(us domain.UserService, as domain.AuthenticationService) *UserHandler {
 	return &UserHandler{us: us, as: as}
 }
 
+// SignupRequest represents the payload required to register a new user.
 type SignupRequest struct {
-	Password string `json:"password"` // Password of the user
-	Email    string `json:"email"`    // Email of the user
+	Password string `json:"password"` // Plain-text password (hashed server-side)
+	Email    string `json:"email"`    // User email address (must be unique)
 }
 
+// UserResponse represents a user returned to API clients.
+//
+// Sensitive fields such as passwords are intentionally excluded.
 type UserResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID `json:"id"`         // Unique identifier of the user
+	Email     string    `json:"email"`      // User email address
+	CreatedAt time.Time `json:"created_at"` // Timestamp when the user was created
 }
 
 // SignUp handles user registration.
@@ -73,8 +80,6 @@ type UserResponse struct {
 //   - Generates an access token for authentication
 func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var request SignupRequest
-
-	// Decode incoming JSON
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		slog.Error("failed to decode request body", "error", err)
 		http.Error(w, "invalid request payload", http.StatusBadRequest)
@@ -85,8 +90,6 @@ func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		Password: request.Password,
 		Email:    request.Email,
 	}
-
-	// Create user via application service
 	newUser, err := uh.us.Create(&user)
 	if err != nil {
 		slog.Error("failed to create user", "email", user.Email, "error", err)
@@ -96,7 +99,6 @@ func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	newUser.Password = ""
 
-	// Generate access token
 	accessToken, err := uh.as.GenerateAccessToken(newUser)
 	if err != nil {
 		slog.Error("failed to generate access token", "user_id", newUser.ID.String(), "error", err)
@@ -104,7 +106,6 @@ func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set token in Authorization header
 	w.Header().Set("Authorization", "Bearer "+accessToken)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -114,8 +115,6 @@ func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		Email:     newUser.Email,
 		CreatedAt: newUser.CreatedAt,
 	}
-
-	// Return the created user in response body
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		slog.Error("failed to encode response", "user_id", newUser.ID.String(), "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -177,8 +176,6 @@ type LoginRequest struct {
 //   - Generates a new access token
 func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 	var request LoginRequest
-
-	// Decode incoming JSON
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		slog.Error("failed to decode login request", "error", err)
 		http.Error(w, "invalid request payload", http.StatusBadRequest)
@@ -187,7 +184,6 @@ func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("login attempt", "email", request.Email)
 
-	// Authenticate user via application service
 	authUser, err := uh.as.Authenticate(request.Email, request.Password)
 	if err != nil {
 		slog.Warn("authentication failed", "email", request.Email, "error", err)
@@ -199,7 +195,6 @@ func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("user authenticated successfully", "user_id", authUser.ID.String(), "email", authUser.Email)
 
-	// Generate access token
 	accessToken, err := uh.as.GenerateAccessToken(authUser)
 	if err != nil {
 		slog.Error("failed to generate access token", "user_id", authUser.ID.String(), "error", err)
@@ -207,7 +202,6 @@ func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set token in Authorization header
 	w.Header().Set("Authorization", "Bearer "+accessToken)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -217,8 +211,6 @@ func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 		Email:     authUser.Email,
 		CreatedAt: authUser.CreatedAt,
 	}
-
-	// Return the authenticated user in response body
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		slog.Error("failed to encode login response", "user_id", authUser.ID.String(), "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

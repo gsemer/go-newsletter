@@ -11,10 +11,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// NewsletterHandler handles HTTP requests related to newsletters,
+// including creation and retrieval.
 type NewsletterHandler struct {
 	ns domain.NewsletterService
 }
 
+// NewNewsletterHandler creates a new NewsletterHandler.
 func NewNewsletterHandler(ns domain.NewsletterService) *NewsletterHandler {
 	return &NewsletterHandler{ns: ns}
 }
@@ -72,7 +75,6 @@ func NewNewsletterHandler(ns domain.NewsletterService) *NewsletterHandler {
 // Side Effects:
 //   - Persists a new newsletter owned by the authenticated user
 func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
-	// Extract owner ID from context
 	value := r.Context().Value(userdomain.UserID)
 	ownerIDStr, ok := value.(string)
 	if !ok {
@@ -88,7 +90,6 @@ func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode request body into newsletter
 	var newsletter domain.Newsletter
 	if err := json.NewDecoder(r.Body).Decode(&newsletter); err != nil {
 		slog.Warn("failed to decode request body", "error", err)
@@ -96,10 +97,8 @@ func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set owner ID from context
 	newsletter.OwnerID = ownerID
 
-	// Call the service to create the newsletter
 	newNewsletter, err := nh.ns.Create(&newsletter)
 	if err != nil {
 		slog.Error("failed to create newsletter", "owner_id", newsletter.OwnerID, "name", newsletter.Name, "error", err)
@@ -107,10 +106,8 @@ func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond with created newsletter in JSON
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
 	if err := json.NewEncoder(w).Encode(newNewsletter); err != nil {
 		slog.Error("failed to encode newsletter response", "owner_id", ownerID, "error", err)
 	}
@@ -157,7 +154,6 @@ func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 // Side Effects:
 //   - None
 func (nh *NewsletterHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	// Extract owner ID from context
 	value := r.Context().Value(userdomain.UserID)
 	ownerIDStr, ok := value.(string)
 	if !ok {
@@ -175,12 +171,12 @@ func (nh *NewsletterHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil || limit <= 0 {
-		limit = 10 // Default to 10 items
+		limit = 10
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || page <= 0 {
-		page = 1 // Default to first page
+		page = 1
 	}
 
 	newsletters, err := nh.ns.GetAll(ownerID, limit, page)
