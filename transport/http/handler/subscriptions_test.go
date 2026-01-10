@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"newsletter/internal/infrastructure/workerpool"
@@ -99,4 +100,68 @@ func TestSubscribe_Success(t *testing.T) {
 
 	ss.AssertExpectations(t)
 	wp.AssertExpectations(t)
+}
+
+func TestUnsubscribe_Success(t *testing.T) {
+	ss := new(MockSubscriptionService)
+	es := new(MockEmailService)
+	wp := new(MockWorkerPool)
+
+	h := NewSubscriptionHandler(ss, es, wp)
+
+	ss.On("Unsubscribe", "token123").Return(nil)
+
+	req := httptest.NewRequest(http.MethodDelete, "/subscriptions/unsubscribe", nil)
+	query := req.URL.Query()
+	query.Set("token", "token123")
+	req.URL.RawQuery = query.Encode()
+
+	rec := httptest.NewRecorder()
+
+	h.Unsubscribe(rec, req)
+
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+
+	ss.AssertExpectations(t)
+}
+
+func TestUnsubscribe_Fails_NoToken(t *testing.T) {
+	ss := new(MockSubscriptionService)
+	es := new(MockEmailService)
+	wp := new(MockWorkerPool)
+
+	h := NewSubscriptionHandler(ss, es, wp)
+
+	req := httptest.NewRequest(http.MethodDelete, "/subscriptions/unsubscribe", nil)
+
+	rec := httptest.NewRecorder()
+
+	h.Unsubscribe(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	ss.AssertExpectations(t)
+}
+
+func TestUnsubscribe_Fails(t *testing.T) {
+	ss := new(MockSubscriptionService)
+	es := new(MockEmailService)
+	wp := new(MockWorkerPool)
+
+	h := NewSubscriptionHandler(ss, es, wp)
+
+	ss.On("Unsubscribe", mock.Anything).Return(errors.New("something went wrong"))
+
+	req := httptest.NewRequest(http.MethodDelete, "/subscriptions/unsubscribe", nil)
+	query := req.URL.Query()
+	query.Set("token", "token123")
+	req.URL.RawQuery = query.Encode()
+
+	rec := httptest.NewRecorder()
+
+	h.Unsubscribe(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+
+	ss.AssertExpectations(t)
 }
