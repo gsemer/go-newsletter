@@ -3,6 +3,7 @@ package workerpool
 import (
 	"log"
 	"log/slog"
+	"strconv"
 	"sync"
 )
 
@@ -22,7 +23,10 @@ type WorkerPool struct {
 	wg      *sync.WaitGroup // wait group to track job completion
 }
 
-func NewWorkerPool(workers, size int, wg *sync.WaitGroup) *WorkerPool {
+func NewWorkerPool(workersStr, sizeStr string, wg *sync.WaitGroup) *WorkerPool {
+	workers, _ := strconv.Atoi(workersStr)
+	size, _ := strconv.Atoi(sizeStr)
+
 	return &WorkerPool{
 		workers: workers,
 		jobs:    make(chan Job, size),

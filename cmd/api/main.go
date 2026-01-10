@@ -9,12 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"newsletter/config"
 	"newsletter/internal/infrastructure/workerpool"
 	transporthttp "newsletter/transport/http"
 )
 
 func main() {
-	wp := workerpool.NewWorkerPool(5, 100, &sync.WaitGroup{})
+	wp := workerpool.NewWorkerPool(config.GetEnv("WORKERS", ""), config.GetEnv("BUFFER_SIZE", ""), &sync.WaitGroup{})
 	wp.Start()
 
 	app := transporthttp.NewApp(wp)
@@ -25,8 +26,8 @@ func main() {
 	}
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Fatal()
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
