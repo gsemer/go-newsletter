@@ -32,10 +32,45 @@ type UserResponse struct {
 
 // SignUp handles user registration.
 //
-// It expects a JSON payload with user details (email, password, etc.).
-// On success, it returns the created user (without password) in the response body
-// and sets the access token in the "Authorization" header in the form "Bearer <token>".
-// This allows clients to use the token for subsequent authenticated requests.
+// Route:
+//
+//	POST /users/signup
+//
+// Description:
+//
+//	Registers a new user using an email and password. If registration
+//	succeeds, an access token is generated and returned in the
+//	"Authorization" response header.
+//
+// Request Body (application/json):
+//
+//	{
+//	  "email": "user@example.com",
+//	  "password": "password"
+//	}
+//
+// Responses:
+//
+//	201 Created
+//	  Headers:
+//	    Authorization: Bearer <access_token>
+//	  Body:
+//	    {
+//	      "id": "uuid",
+//	      "email": "user@example.com",
+//	      "created_at": "2026-01-10T12:00:00Z"
+//	    }
+//
+//	400 Bad Request
+//	  - Invalid JSON payload
+//	  - User creation failure (e.g. validation errors)
+//
+//	500 Internal Server Error
+//	  - Token generation failure
+//
+// Side Effects:
+//   - Persists a new user record
+//   - Generates an access token for authentication
 func (uh *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var request SignupRequest
 
@@ -98,12 +133,48 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// Signin handles user login (authentication).
+// Signin handles user authentication.
 //
-// It expects a JSON payload with the user's email and password.
-// On successful authentication, it returns the authenticated user (without password)
-// in the response body and sets the access token in the "Authorization" header
-// in the form "Bearer <token>". This token can then be used for subsequent authenticated requests.
+// Route:
+//
+//	POST /users/signin
+//
+// Description:
+//
+//	Authenticates a user using email and password. On success, an access
+//	token is returned in the "Authorization" response header and the
+//	authenticated user is returned in the response body.
+//
+// Request Body (application/json):
+//
+//	{
+//	  "email": "user@example.com",
+//	  "password": "password"
+//	}
+//
+// Responses:
+//
+//	200 OK
+//	  Headers:
+//	    Authorization: Bearer <access_token>
+//	  Body:
+//	    {
+//	      "id": "uuid",
+//	      "email": "user@example.com",
+//	      "created_at": "2026-01-10T12:00:00Z"
+//	    }
+//
+//	400 Bad Request
+//	  - Invalid JSON payload
+//
+//	401 Unauthorized
+//	  - Invalid email or password
+//
+//	500 Internal Server Error
+//	  - Token generation failure
+//
+// Side Effects:
+//   - Generates a new access token
 func (uh *UserHandler) Signin(w http.ResponseWriter, r *http.Request) {
 	var request LoginRequest
 
