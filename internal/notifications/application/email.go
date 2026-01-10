@@ -54,7 +54,7 @@ func (es *EmailService) Send(email *domain.Email) error {
 				Data: aws.String(email.Subject),
 			},
 		},
-		Source: aws.String(config.GetEnv("FROM", "")),
+		Source: aws.String(config.GetEnv("AWS_FROM", "")),
 	}
 
 	// Send the email
