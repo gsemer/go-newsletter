@@ -2,11 +2,13 @@ package firebase
 
 import (
 	"context"
+	"errors"
 	"newsletter/internal/subscriptions/domain"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
+	"google.golang.org/api/iterator"
 )
 
 type SubscriptionRepository struct {
@@ -47,6 +49,38 @@ func (sr *SubscriptionRepository) Subscribe(ctx context.Context, subscription *d
 	return subscription, nil
 }
 
-func (sr *SubscriptionRepository) Unsubscribe(ctx context.Context) error {
-	return nil
+// Unsubscribe removes a subscription from Firestore based on the unsubscribe token.
+//
+// It searches the "subscriptions" collection for a document whose "unsubscribeToken"
+// field matches the provided token. If a matching document is found, it is deleted.
+//
+// Parameters:
+//   - ctx: Context for controlling cancellation and deadlines for the Firestore operation.
+//   - token: The unique unsubscribe token associated with the subscription to be removed.
+//
+// Returns:
+//   - error: Returns an error if no matching subscription is found, or if the Firestore
+//     operation fails for any reason.
+//
+// Notes:
+//   - This function only deletes the first subscription found with the given token.
+//   - The unsubscribe token should be unique to avoid accidental deletion of multiple subscriptions.
+//   - The Firestore field name used in the query is "unsubscribeToken", matching the struct tag in the Subscription entity.
+func (sr *SubscriptionRepository) Unsubscribe(ctx context.Context, unsubscribeToken string) error {
+	iter := sr.db.
+		Collection("subscriptions").
+		Where("unsubscribeToken", "==", unsubscribeToken).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		if err == iterator.Done {
+			return errors.New("subscription not found")
+		}
+		return err
+	}
+
+	_, err = doc.Ref.Delete(ctx)
+	return err
 }
