@@ -102,8 +102,8 @@ func (app *App) Routes() http.Handler {
 	subscriptionRoutes := r.PathPrefix("/subscriptions").Subrouter()
 	// POST /subscriptions/{newsletter_id} - Subscribes the current user to a newsletter.
 	subscriptionRoutes.HandleFunc("/{newsletter_id}", app.sh.Subscribe).Methods("POST")
-	// POST /subscriptions - Unsubscribes the current user from a newsletter.
-	subscriptionRoutes.HandleFunc("/unsubscribe", app.sh.Unsubscribe).Methods("DELETE")
+	// POST /subscriptions/{newsletter_id} - Unsubscribes the current user from a newsletter.
+	subscriptionRoutes.HandleFunc("/{newsletter_id}", app.sh.Unsubscribe).Methods("DELETE")
 
 	return r
 }
