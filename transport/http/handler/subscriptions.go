@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"newsletter/config"
 	"newsletter/internal/infrastructure/workerpool"
 	"newsletter/internal/infrastructure/workerpool/jobs"
 	notifications "newsletter/internal/notifications/domain"
@@ -30,7 +31,6 @@ type SubscribeRequest struct {
 }
 
 // SubscribeResponse represents the response returned after a subscription is created.
-
 type SubscribeResponse struct {
 	ID           string    `json:"id"`
 	NewsletterID string    `json:"newsletter_id"`
@@ -38,8 +38,47 @@ type SubscribeResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// Subscribe handles newsletter subscription requests.
+//
+// Route:
+//
+//	POST /subscriptions/{newsletter_id}
+//
+// Description:
+//
+//	Subscribes an email address to a specific newsletter. Upon successful
+//	subscription, a confirmation email is sent containing an unsubscribe link.
+//
+// Path Parameters:
+//
+//	newsletter_id (string) - The ID of the newsletter to subscribe to
+//
+// Request Body (application/json):
+//
+//	{
+//	  "email": "user@example.com"
+//	}
+//
+// Responses:
+//
+//	201 Created
+//	  {
+//	    "id": "subscription_id",
+//	    "newsletter_id": "newsletter_id",
+//	    "email": "user@example.com",
+//	    "created_at": "2026-01-10T12:00:00Z"
+//	  }
+//
+//	400 Bad Request
+//	  - Missing newsletter_id in path
+//	  - Invalid JSON body
+//
+//	500 Internal Server Error
+//	  - Subscription creation failure
+//
+// Side Effects:
+//   - Sends a confirmation email containing an unsubscribe link with a token.
 func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
-	// Retrieve newsletter ID from path parameters
 	vars := mux.Vars(r)
 	newsletterID, found := vars["newsletter_id"]
 	if !found {
@@ -47,7 +86,6 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Parse request body
 	var request SubscribeRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
@@ -64,19 +102,33 @@ func (sh *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Send confirmation email to the subscriber
+	// Send confirmation email to the subscriber with unsubscribe link
 	job := jobs.SendEmailJob{
 		Email: notifications.Email{
 			To:      newSubscription.Email,
 			Subject: "Confirmation",
-			Text:    fmt.Sprintf(`You can unsubscribe here http://localhost:8001/subscriptions/unsubscribe?token=%s`, newSubscription.UnsubscribeToken),
-			HTML:    fmt.Sprintf(`<p>You can unsubscribe here <a href="http://localhost:8001/subscriptions/unsubscribe?token=%s">Unsubscribe</a></p>`, newSubscription.UnsubscribeToken),
+			Text: fmt.Sprintf(
+				`You are receiving this email because you subscribed to this newsletter.
+                If you no longer wish to receive these emails, you can unsubscribe using the link below:
+                %s/subscriptions/%s?token=%s`,
+				config.GetEnv("BASE_URL", ""),
+				newSubscription.NewsletterID,
+				newSubscription.UnsubscribeToken,
+			),
+			HTML: fmt.Sprintf(
+				`<p>You are receiving this email because you subscribed to this newsletter.</p>
+				<p>If you no longer wish to receive these emails, you can
+				<a href="%s/subscriptions/%s?token=%s">unsubscribe here</a>.</p>`,
+				config.GetEnv("BASE_URL", ""),
+				newSubscription.NewsletterID,
+				newSubscription.UnsubscribeToken,
+			),
 		},
 		Service: sh.es,
 	}
 	sh.wp.Submit(&job)
 
-	// Respond with created subscription in JSON
+	// Immediate response with created subscription in JSON
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
