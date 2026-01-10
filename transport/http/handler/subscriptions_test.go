@@ -27,8 +27,8 @@ func (m *MockSubscriptionService) Subscribe(s *domain.Subscription) (*domain.Sub
 	return args.Get(0).(*domain.Subscription), args.Error(1)
 }
 
-func (m *MockSubscriptionService) Unsubscribe() error {
-	args := m.Called()
+func (m *MockSubscriptionService) Unsubscribe(token string) error {
+	args := m.Called(token)
 	return args.Error(0)
 }
 
