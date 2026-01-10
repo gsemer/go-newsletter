@@ -20,9 +20,57 @@ func NewNewsletterHandler(ns domain.NewsletterService) *NewsletterHandler {
 }
 
 // Create handles creating a new newsletter.
-// It expects JSON in the request body with fields "name" and "description".
-// The owner ID is extracted from the request context.
-// Returns the created newsletter in JSON format.
+//
+// Route:
+//
+//	POST /newsletters
+//
+// Description:
+//
+//	Creates a new newsletter owned by the authenticated user. The owner ID
+//	is extracted from the request context (set by authentication middleware).
+//
+// Request Body (application/json):
+//
+//	{
+//	  "name": "My Newsletter",
+//	  "description": "Weekly updates about tech"
+//	}
+//
+// Responses:
+//
+//	201 Created
+//	  {
+//	    "id": "uuid",
+//	    "name": "My Newsletter",
+//	    "description": "Weekly updates about tech",
+//	    "owner_id": "uuid",
+//	    "created_at": "2026-01-10T12:00:00Z"
+//	  }
+//
+// Responses:
+//
+//	201 Created
+//	  {
+//	    "id": "uuid",
+//	    "name": "My Newsletter",
+//	    "description": "Weekly updates about tech",
+//	    "owner_id": "uuid",
+//	    "created_at": "2026-01-10T12:00:00Z"
+//	  }
+//
+//	400 Bad Request
+//	  - Invalid JSON body
+//	  - Invalid owner ID
+//
+//	401 Unauthorized
+//	  - Missing or invalid authentication context
+//
+//	500 Internal Server Error
+//	  - Newsletter creation failure
+//
+// Side Effects:
+//   - Persists a new newsletter owned by the authenticated user
 func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Extract owner ID from context
 	value := r.Context().Value(userdomain.UserID)
@@ -68,7 +116,46 @@ func (nh *NewsletterHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetAll handles the request to list all newsletters for the authenticated user.
+// GetAll handles retrieving all newsletters for the authenticated user.
+//
+// Route:
+//
+//	GET /newsletters
+//
+// Description:
+//
+//	Returns a paginated list of newsletters owned by the authenticated user.
+//	Pagination is controlled via optional query parameters.
+//
+// Query Parameters:
+//
+//	limit (int, optional) - Number of newsletters per page (default: 10)
+//	page  (int, optional) - Page number (default: 1)
+//
+// Responses:
+//
+//	200 OK
+//	  [
+//	    {
+//	      "id": "uuid",
+//	      "name": "My Newsletter",
+//	      "description": "Weekly updates about tech",
+//	      "owner_id": "uuid",
+//	      "created_at": "2026-01-10T12:00:00Z"
+//	    }
+//	  ]
+//
+//	400 Bad Request
+//	  - Invalid owner ID
+//
+//	401 Unauthorized
+//	  - Missing or invalid authentication context
+//
+//	500 Internal Server Error
+//	  - Newsletter retrieval failure
+//
+// Side Effects:
+//   - None
 func (nh *NewsletterHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	// Extract owner ID from context
 	value := r.Context().Value(userdomain.UserID)
