@@ -11,7 +11,7 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-// ConnectWithRetry establishes a PostgreSQL connection using the pgx driver.
+// InitPostgres establishes a PostgreSQL connection using the pgx driver.
 //
 // The function reads the DSN from configuration (DSN env variable) and attempts
 // to connect multiple times with a fixed backoff. This is useful in containerized
