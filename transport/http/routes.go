@@ -22,9 +22,9 @@ import (
 )
 
 type App struct {
-	uh handler.UserHandler
-	nh handler.NewsletterHandler
-	sh handler.SubscriptionHandler
+	uh *handler.UserHandler
+	nh *handler.NewsletterHandler
+	sh *handler.SubscriptionHandler
 }
 
 // NewApp initializes and returns a new instance of the App.
@@ -72,9 +72,9 @@ func NewApp(wp *workerpool.WorkerPool) *App {
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService, emailService, wp)
 
 	return &App{
-		uh: *userHandler,
-		nh: *newsletterHandler,
-		sh: *subscriptionHandler,
+		uh: userHandler,
+		nh: newsletterHandler,
+		sh: subscriptionHandler,
 	}
 }
 
