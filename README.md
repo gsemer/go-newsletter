@@ -14,7 +14,7 @@ The system follows a Domain-Driven Design (DDD) architecture,
 with clearly defined bounded contexts and separation between domain,
 application, infrastructure, and transport layers.
 
-## Techmology stack
+## Technology stack
 
 - **Go (Golang)** — backend language
 - **PostgreSQL** — user and core data persistence
